@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <EditTextPreference
-        android:key="edittext"
-        android:title="Some input"
-        android:dialogTitle="This is the title"/>
-</PreferenceScreen>
