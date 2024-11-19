@@ -108,17 +108,27 @@ public class WebdavHandler {
         }
     }
 
-    private void downloadFile(HttpUrl location) {
+    private void downloadFile(HttpUrl location, long time) {
         DavCollection davCollection = new DavCollection(okHttpClient, location);
 
         davCollection.get("", null, response -> {
             if (response.body() != null) {
                 try {
                     Log.i("WebdavHandler", storageDir + extractPath(location));
+                    File file = new File(storageDir + extractPath(location));
 
-                    FileOutputStream fos = new FileOutputStream(storageDir + extractPath(location));
+                    // doesn't do anything useful yet
+                    if (file.lastModified() > time) {
+                        Log.i("WebdavHandler", "last modified newer than server");
+                    }
+
+                    // write the file
+                    FileOutputStream fos = new FileOutputStream(file);
                     fos.write(response.body().bytes());
                     fos.close();
+
+                    // update with the server-side time
+                    file.setLastModified(time);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -138,13 +148,14 @@ public class WebdavHandler {
                     @Override
                     public void onResponse(@NonNull at.bitfire.dav4jvm.Response response, @NonNull at.bitfire.dav4jvm.Response.HrefRelation hrefRelation) {
                         Log.i("WebdavHandler", "propfind: " + response.toString());
+                        GetLastModified modified = (GetLastModified) response.getProperties().get(1);
                         ResourceType type = (ResourceType) response.getProperties().get(2);
 
                         if (type.getTypes().contains(new Property.Name(XmlUtils.NS_WEBDAV, "collection"))) {
                             Log.i("WebdavHandler", "directory: " + storageDir + extractPath(response.getHref()));
                             new File(storageDir + extractPath(response.getHref())).mkdirs();
                         } else {
-                            downloadFile(response.getHref());
+                            downloadFile(response.getHref(), modified.getLastModified());
                         }
                     }
                 });

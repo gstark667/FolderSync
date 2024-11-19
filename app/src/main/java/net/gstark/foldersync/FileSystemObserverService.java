@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Stack;
 
 public class FileSystemObserverService extends Service {
+    SettingsStore settings;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -22,7 +23,8 @@ public class FileSystemObserverService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        observe();
+        settings = new SettingsStore(getApplicationContext());
+        observe(settings.loadValue(settings.LOCALDIR_KEY, settings.external));
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -50,14 +52,14 @@ public class FileSystemObserverService extends Service {
         return Environment.getExternalStorageDirectory();
     }
 
-    public void observe() {
+    public void observe(String path) {
         Thread t = new Thread(new Runnable() {
 
             @Override
             public void run() {
                 //File[]   listOfFiles = new File(path).listFiles();
                 //File str = getInternalStoragePath();
-                File str = new File("/storage/emulated/0/Notes");
+                File str = new File(path);
                 if (str != null) {
                     String internalPath = str.getAbsolutePath();
 

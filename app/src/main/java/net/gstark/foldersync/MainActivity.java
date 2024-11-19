@@ -35,13 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
 
-    RxDataStore<Preferences> dataStore;
-    Preferences.Key<String> URL_KEY = PreferencesKeys.stringKey("url");
-    Preferences.Key<String> USERNAME_KEY = PreferencesKeys.stringKey("username");
-    Preferences.Key<String> PASSWORD_KEY = PreferencesKeys.stringKey("password");
-    Preferences.Key<String> LOCALDIR_KEY = PreferencesKeys.stringKey("localdir");
-    final int READ_REQUEST_CODE = 1;
-    final String external = Environment.getExternalStorageDirectory().toString();
+    SettingsStore settings;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,34 +46,22 @@ public class MainActivity extends AppCompatActivity {
 
         setSupportActionBar(binding.toolbar);
 
-        dataStore = new RxPreferenceDataStoreBuilder(getApplicationContext(), "settings").build();
-        dataStore.data();
+        settings = new SettingsStore(getApplicationContext());
 
-        setupTextHandler(R.id.urlField, URL_KEY, "https://");
-        setupTextHandler(R.id.usernameField, USERNAME_KEY, "");
-        setupTextHandler(R.id.passwordField, PASSWORD_KEY, "");
-        setupTextHandler(R.id.localDirField, LOCALDIR_KEY, external);
-
-        /*Button dirSelector = findViewById(R.id.selectLocalDirButton);
-        dirSelector.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-                intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, loadValue(LOCALDIR_KEY, ""));
-                startActivityForResult(intent, READ_REQUEST_CODE);
-            }
-        });*/
-        Log.i("MainActivity", external);
+        setupTextHandler(R.id.urlField, settings.URL_KEY, "https://");
+        setupTextHandler(R.id.usernameField, settings.USERNAME_KEY, "");
+        setupTextHandler(R.id.passwordField, settings.PASSWORD_KEY, "");
+        setupTextHandler(R.id.localDirField, settings.LOCALDIR_KEY, settings.external);
 
         Button downloadButton = findViewById(R.id.runDownloadButton);
         downloadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 WebdavHandler webdavHandler = new WebdavHandler(
-                        loadValue(URL_KEY, "https://"),
-                        loadValue(USERNAME_KEY, ""),
-                        loadValue(PASSWORD_KEY, ""),
-                        loadValue(LOCALDIR_KEY, external),
+                        settings.loadValue(settings.URL_KEY, "https://"),
+                        settings.loadValue(settings.USERNAME_KEY, ""),
+                        settings.loadValue(settings.PASSWORD_KEY, ""),
+                        settings.loadValue(settings.LOCALDIR_KEY, settings.external),
                         getApplicationContext()
                 );
                 webdavHandler.downloadFiles();
@@ -100,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
     public void setupTextHandler(@IdRes int id, Preferences.Key<String> key, String defaultValue) {
         EditText field = findViewById(id);
 
-        field.setText(loadValue(key, defaultValue));
+        field.setText(settings.loadValue(key, defaultValue));
 
         field.addTextChangedListener(new TextWatcher() {
 
@@ -114,21 +96,8 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                storeValue(key, s.toString());
+                settings.storeValue(key, s.toString());
             }
-        });
-    }
-
-    private String loadValue(Preferences.Key<String> key, String defaultValue) {
-        Single<String> value = dataStore.data().firstOrError().map(prefs -> prefs.get(key)).onErrorReturnItem(defaultValue);
-        return value.blockingGet();
-    }
-
-    private void storeValue(Preferences.Key<String> key, String value) {
-        Single<Preferences> updateResult =  dataStore.updateDataAsync(prefsIn -> {
-            MutablePreferences mutablePreferences = prefsIn.toMutablePreferences();
-            mutablePreferences.set(key, value);
-            return Single.just(mutablePreferences);
         });
     }
 
@@ -152,21 +121,5 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode,
-                                 Intent resultData) {
-        super.onActivityResult(requestCode, resultCode, resultData);
-
-        if (requestCode == READ_REQUEST_CODE
-                && resultCode == Activity.RESULT_OK) {
-            Uri uri = null;
-            if (resultData != null) {
-                uri = resultData.getData();
-                Log.i("FolderSync", uri.toString());
-                storeValue(LOCALDIR_KEY, uri.toString());
-            }
-        }
     }
 }
