@@ -45,11 +45,16 @@
             android:layout_height="wrap_content"
             android:inputType="textPassword" />
 
-        <Button
-            android:id="@+id/selectLocalDirButton"
+        <TextView
+            android:id="@+id/localDirLabel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Local Directory" />
+            android:text="LocalDir:" />
+
+        <EditText
+            android:id="@+id/localDirField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
         <Button
             android:id="@+id/runDownloadButton"

@@ -114,16 +114,11 @@ public class WebdavHandler {
         davCollection.get("", null, response -> {
             if (response.body() != null) {
                 try {
-                    Log.i("WebdavHandler", "get " + extractPath(location) + ": " + response.body().string());
-                    Log.i("WebdavHandler", storageDir + extractDirectory(location) + " " + extractFilename(location));
+                    Log.i("WebdavHandler", storageDir + extractPath(location));
 
-                    DocumentFile directory = DocumentFile.fromTreeUri(context.getApplicationContext(), Uri.parse(storageDir + extractDirectory(location) + "/"));
-                    DocumentFile file = directory.createFile("text/*", extractFilename(location));
-                    ParcelFileDescriptor pfd = context.getApplicationContext().getContentResolver().openFileDescriptor(file.getUri(), "w");
-                    FileOutputStream fos = new FileOutputStream(pfd.getFileDescriptor());
-                    fos.write("this was the directory selected".getBytes());
+                    FileOutputStream fos = new FileOutputStream(storageDir + extractPath(location));
+                    fos.write(response.body().bytes());
                     fos.close();
-                    pfd.close();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

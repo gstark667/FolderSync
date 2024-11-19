@@ -8,7 +8,9 @@ import android.os.Bundle;
 import androidx.annotation.IdRes;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.os.Environment;
 import android.provider.DocumentsContract;
+import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -19,7 +21,6 @@ import androidx.datastore.preferences.core.Preferences;
 import androidx.datastore.preferences.core.PreferencesKeys;
 import androidx.datastore.preferences.rxjava3.RxPreferenceDataStoreBuilder;
 import androidx.datastore.rxjava3.RxDataStore;
-import androidx.navigation.ui.AppBarConfiguration;
 
 import net.gstark.foldersync.databinding.ActivityMainBinding;
 
@@ -39,9 +40,8 @@ public class MainActivity extends AppCompatActivity {
     Preferences.Key<String> USERNAME_KEY = PreferencesKeys.stringKey("username");
     Preferences.Key<String> PASSWORD_KEY = PreferencesKeys.stringKey("password");
     Preferences.Key<String> LOCALDIR_KEY = PreferencesKeys.stringKey("localdir");
-
     final int READ_REQUEST_CODE = 1;
-
+    final String external = Environment.getExternalStorageDirectory().toString();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,8 +58,9 @@ public class MainActivity extends AppCompatActivity {
         setupTextHandler(R.id.urlField, URL_KEY, "https://");
         setupTextHandler(R.id.usernameField, USERNAME_KEY, "");
         setupTextHandler(R.id.passwordField, PASSWORD_KEY, "");
+        setupTextHandler(R.id.localDirField, LOCALDIR_KEY, external);
 
-        Button dirSelector = findViewById(R.id.selectLocalDirButton);
+        /*Button dirSelector = findViewById(R.id.selectLocalDirButton);
         dirSelector.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -67,7 +68,8 @@ public class MainActivity extends AppCompatActivity {
                 intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, loadValue(LOCALDIR_KEY, ""));
                 startActivityForResult(intent, READ_REQUEST_CODE);
             }
-        });
+        });*/
+        Log.i("MainActivity", external);
 
         Button downloadButton = findViewById(R.id.runDownloadButton);
         downloadButton.setOnClickListener(new View.OnClickListener() {
@@ -77,12 +79,20 @@ public class MainActivity extends AppCompatActivity {
                         loadValue(URL_KEY, "https://"),
                         loadValue(USERNAME_KEY, ""),
                         loadValue(PASSWORD_KEY, ""),
-                        loadValue(LOCALDIR_KEY, "content://com.android.externalstorage.documents/tree/primary%3AFolderSync"),
+                        loadValue(LOCALDIR_KEY, external),
                         getApplicationContext()
                 );
                 webdavHandler.downloadFiles();
             }
         });
+
+        if (!Environment.isExternalStorageManager()) {
+            Intent intent = new Intent();
+            intent.setAction(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+            Uri uri = Uri.fromParts("package", this.getPackageName(), null);
+            intent.setData(uri);
+            startActivity(intent);
+        }
 
         Log.i("MainActivity", "external: " + android.os.Environment.getExternalStorageDirectory().toString());
     }
